@@ -4,15 +4,30 @@ import { isAuthenticated } from '../auth';
 import { read } from './apiUser';
 import DefaultProfile from '../images/avatar.png';
 import DeleteUser from './DeleteUser';
+import FollowProfileButton from './FollowProfileButton';
 
 class Profile extends Component {
     constructor() {
         super();
         this.state = {
-            user: "",
-            redirectToSignin: false
+            user: {
+                following: [],
+                followers: []
+            },
+            redirectToSignin: false,
+            following: false
 
         }
+    }
+
+    // check if user's already following
+    checkFollow = (user) => {
+        const jwt = isAuthenticated();
+        const match = user.followers.find(follower => {
+            // onhe user can have many followers and vice versa
+            return follower._id === jwt.user._id;
+        })
+        return match;
     }
 
     init = (userId) => {
@@ -22,7 +37,8 @@ class Profile extends Component {
                 this.setState({ redirectToSignin: true });
             }
             else {
-                this.setState({ user: data });
+                let following = this.checkFollow(data);
+                this.setState({ user: data, following });
             }
         })
     }
@@ -55,7 +71,7 @@ class Profile extends Component {
                             <p>Email: {user.email}</p>
                             <p>{`Joined ${new Date(user.created).toDateString()}`}</p>
                         </div>
-                        {isAuthenticated().user && isAuthenticated().user._id === user._id && (
+                        {isAuthenticated().user && isAuthenticated().user._id === user._id ? (
                             <div className="d-inline-block">
                                 <Link className="btn btn-raised btn-success mr-5" to={`/user/edit/${user._id}`}>
                                     Edit Profile
@@ -63,17 +79,19 @@ class Profile extends Component {
                                 <DeleteUser userId={user._id} />
 
                             </div>
+                        ) : (
+                            <p>{this.state.following ? 'following' : 'not following'}</p>
                         )}
 
                     </div>
                 </div>
                 <div className="row">
                     <div className="col md-12 mt-5 mb-5">
-                        <hr/>
-                            <p className="lead">
-                                {user.about}
-                            </p>
-                        <hr/>
+                        <hr />
+                        <p className="lead">
+                            {user.about}
+                        </p>
+                        <hr />
                     </div>
                 </div>
             </div>
